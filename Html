@@ -1,0 +1,600 @@
+Content of /app/workspaces/🍎/chat-app/index.html:
+  1| <!DOCTYPE html>
+  2| <html lang="zh-CN">
+  3| <head>
+  4| <meta charset="UTF-8">
+  5| <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  6| <title>Chat with 阿言</title>
+  7| <style>
+  8|   * { margin: 0; padding: 0; box-sizing: border-box; }
+  9| 
+ 10|   :root {
+ 11|     --bg: #0f0f0f;
+ 12|     --surface: #1a1a1a;
+ 13|     --surface2: #252525;
+ 14|     --border: #2a2a2a;
+ 15|     --text: #e8e8e8;
+ 16|     --text-muted: #888;
+ 17|     --accent: #b48ead;
+ 18|     --accent-soft: rgba(180,142,173,0.12);
+ 19|     --user-bubble: #2d2438;
+ 20|     --ai-bubble: #1e1e1e;
+ 21|     --input-bg: #1e1e1e;
+ 22|   }
+ 23| 
+ 24|   body {
+ 25|     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+ 26|     background: var(--bg);
+ 27|     color: var(--text);
+ 28|     height: 100vh;
+ 29|     display: flex;
+ 30|     flex-direction: column;
+ 31|     overflow: hidden;
+ 32|   }
+ 33| 
+ 34|   /* Header */
+ 35|   .header {
+ 36|     display: flex;
+ 37|     align-items: center;
+ 38|     gap: 12px;
+ 39|     padding: 16px 20px;
+ 40|     border-bottom: 1px solid var(--border);
+ 41|     background: var(--surface);
+ 42|     backdrop-filter: blur(20px);
+ 43|   }
+ 44|   .header-avatar {
+ 45|     width: 36px; height: 36px;
+ 46|     border-radius: 50%;
+ 47|     background: var(--accent);
+ 48|     display: flex; align-items: center; justify-content: center;
+ 49|     font-size: 14px; color: #fff; font-weight: 600;
+ 50|   }
+ 51|   .header-info h1 {
+ 52|     font-size: 15px; font-weight: 600; color: var(--text);
+ 53|   }
+ 54|   .header-info span {
+ 55|     font-size: 12px; color: var(--text-muted);
+ 56|   }
+ 57| 
+ 58|   /* Chat area */
+ 59|   .chat-container {
+ 60|     flex: 1;
+ 61|     overflow-y: auto;
+ 62|     padding: 20px;
+ 63|     display: flex;
+ 64|     flex-direction: column;
+ 65|     gap: 16px;
+ 66|     scroll-behavior: smooth;
+ 67|   }
+ 68|   .chat-container::-webkit-scrollbar { width: 4px; }
+ 69|   .chat-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+ 70| 
+ 71|   /* Message row */
+ 72|   .msg-row {
+ 73|     display: flex;
+ 74|     gap: 10px;
+ 75|     max-width: 80%;
+ 76|     animation: fadeIn 0.3s ease;
+ 77|   }
+ 78|   .msg-row.user { align-self: flex-end; flex-direction: row-reverse; }
+ 79|   .msg-row.ai { align-self: flex-start; }
+ 80| 
+ 81|   @keyframes fadeIn {
+ 82|     from { opacity: 0; transform: translateY(8px); }
+ 83|     to { opacity: 1; transform: translateY(0); }
+ 84|   }
+ 85| 
+ 86|   .msg-avatar {
+ 87|     width: 32px; height: 32px; min-width: 32px;
+ 88|     border-radius: 50%;
+ 89|     display: flex; align-items: center; justify-content: center;
+ 90|     font-size: 12px; font-weight: 600; color: #fff;
+ 91|     margin-top: 2px;
+ 92|   }
+ 93|   .msg-row.ai .msg-avatar { background: var(--accent); }
+ 94|   .msg-row.user .msg-avatar { background: #5b6abf; }
+ 95| 
+ 96|   .msg-bubble {
+ 97|     padding: 10px 14px;
+ 98|     border-radius: 16px;
+ 99|     font-size: 14px;
+100|     line-height: 1.6;
+101|     word-break: break-word;
+102|     white-space: pre-wrap;
+103|   }
+104|   .msg-row.ai .msg-bubble {
+105|     background: var(--ai-bubble);
+106|     border: 1px solid var(--border);
+107|     border-top-left-radius: 4px;
+108|   }
+109|   .msg-row.user .msg-bubble {
+110|     background: var(--user-bubble);
+111|     border: 1px solid rgba(180,142,173,0.2);
+112|     border-top-right-radius: 4px;
+113|   }
+114| 
+115|   .msg-time {
+116|     font-size: 11px;
+117|     color: var(--text-muted);
+118|     margin-top: 4px;
+119|     padding: 0 4px;
+120|   }
+121|   .msg-row.user .msg-time { text-align: right; }
+122| 
+123|   /* Typing indicator */
+124|   .typing-indicator {
+125|     display: none;
+126|     align-self: flex-start;
+127|     padding: 0 20px;
+128|   }
+129|   .typing-indicator.active { display: flex; gap: 10px; align-items: center; }
+130|   .typing-dots { display: flex; gap: 4px; padding: 10px 14px; background: var(--ai-bubble); border: 1px solid var(--border); border-radius: 16px; border-top-left-radius: 4px; }
+131|   .typing-dots span {
+132|     width: 6px; height: 6px; background: var(--text-muted); border-radius: 50%;
+133|     animation: bounce 1.4s infinite;
+134|   }
+135|   .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+136|   .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+137|   @keyframes bounce {
+138|     0%, 60%, 100% { transform: translateY(0); }
+139|     30% { transform: translateY(-6px); }
+140|   }
+141| 
+142|   /* Input area */
+143|   .input-area {
+144|     padding: 12px 16px;
+145|     border-top: 1px solid var(--border);
+146|     background: var(--surface);
+147|     display: flex;
+148|     gap: 8px;
+149|     align-items: flex-end;
+150|   }
+151| 
+152|   .input-tools {
+153|     display: flex;
+154|     gap: 4px;
+155|     align-items: center;
+156|   }
+157|   .tool-btn {
+158|     width: 36px; height: 36px;
+159|     border: none; border-radius: 50%;
+160|     background: transparent;
+161|     color: var(--text-muted);
+162|     font-size: 18px;
+163|     cursor: pointer;
+164|     display: flex; align-items: center; justify-content: center;
+165|     transition: all 0.2s;
+166|   }
+167|   .tool-btn:hover { background: var(--surface2); color: var(--text); }
+168| 
+169|   .input-wrapper {
+170|     flex: 1;
+171|     background: var(--input-bg);
+172|     border: 1px solid var(--border);
+173|     border-radius: 20px;
+174|     display: flex;
+175|     align-items: flex-end;
+176|     padding: 4px 4px 4px 16px;
+177|     transition: border-color 0.2s;
+178|   }
+179|   .input-wrapper:focus-within { border-color: var(--accent); }
+180| 
+181|   #msgInput {
+182|     flex: 1;
+183|     background: transparent;
+184|     border: none;
+185|     outline: none;
+186|     color: var(--text);
+187|     font-size: 14px;
+188|     font-family: inherit;
+189|     resize: none;
+190|     max-height: 120px;
+191|     padding: 6px 0;
+192|     line-height: 1.5;
+193|   }
+194|   #msgInput::placeholder { color: var(--text-muted); }
+195| 
+196|   .send-btn {
+197|     width: 32px; height: 32px;
+198|     border: none; border-radius: 50%;
+199|     background: var(--accent);
+200|     color: #fff;
+201|     font-size: 16px;
+202|     cursor: pointer;
+203|     display: flex; align-items: center; justify-content: center;
+204|     transition: all 0.2s;
+205|     flex-shrink: 0;
+206|   }
+207|   .send-btn:hover { opacity: 0.85; }
+208|   .send-btn:disabled { opacity: 0.3; cursor: default; }
+209| 
+210|   /* Emoji picker */
+211|   .emoji-picker {
+212|     display: none;
+213|     position: absolute;
+214|     bottom: 70px;
+215|     left: 16px;
+216|     background: var(--surface);
+217|     border: 1px solid var(--border);
+218|     border-radius: 12px;
+219|     padding: 12px;
+220|     width: 280px;
+221|     max-height: 200px;
+222|     overflow-y: auto;
+223|     z-index: 100;
+224|     box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+225|   }
+226|   .emoji-picker.active { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+227|   .emoji-picker button {
+228|     border: none; background: transparent;
+229|     font-size: 22px; padding: 4px;
+230|     cursor: pointer; border-radius: 6px;
+231|     transition: background 0.15s;
+232|   }
+233|   .emoji-picker button:hover { background: var(--surface2); }
+234| 
+235|   /* Image preview */
+236|   .preview-area {
+237|     display: none;
+238|     padding: 8px 16px;
+239|     border-top: 1px solid var(--border);
+240|     background: var(--surface);
+241|   }
+242|   .preview-area.active { display: flex; gap: 8px; flex-wrap: wrap; }
+243|   .preview-item {
+244|     position: relative;
+245|     width: 60px; height: 60px;
+246|     border-radius: 8px;
+247|     overflow: hidden;
+248|     border: 1px solid var(--border);
+249|   }
+250|   .preview-item img { width: 100%; height: 100%; object-fit: cover; }
+251|   .preview-item .remove-btn {
+252|     position: absolute; top: 2px; right: 2px;
+253|     width: 18px; height: 18px;
+254|     background: rgba(0,0,0,0.7); border: none;
+255|     color: #fff; font-size: 12px;
+256|     border-radius: 50%; cursor: pointer;
+257|     display: flex; align-items: center; justify-content: center;
+258|   }
+259| 
+260|   /* Image in message */
+261|   .msg-image {
+262|     max-width: 200px;
+263|     border-radius: 8px;
+264|     margin-top: 6px;
+265|     cursor: pointer;
+266|   }
+267| 
+268|   /* Settings modal */
+269|   .modal-overlay {
+270|     display: none;
+271|     position: fixed; inset: 0;
+272|     background: rgba(0,0,0,0.6);
+273|     z-index: 200;
+274|     align-items: center; justify-content: center;
+275|   }
+276|   .modal-overlay.active { display: flex; }
+277|   .modal {
+278|     background: var(--surface);
+279|     border: 1px solid var(--border);
+280|     border-radius: 16px;
+281|     padding: 24px;
+282|     width: 90%; max-width: 400px;
+283|   }
+284|   .modal h2 { font-size: 16px; margin-bottom: 16px; }
+285|   .modal label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 4px; }
+286|   .modal input, .modal textarea {
+287|     width: 100%;
+288|     background: var(--input-bg);
+289|     border: 1px solid var(--border);
+290|     border-radius: 8px;
+291|     padding: 8px 12px;
+292|     color: var(--text);
+293|     font-size: 13px;
+294|     font-family: inherit;
+295|     margin-bottom: 12px;
+296|     outline: none;
+297|   }
+298|   .modal input:focus, .modal textarea:focus { border-color: var(--accent); }
+299|   .modal textarea { resize: vertical; min-height: 80px; }
+300|   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+301|   .modal-actions button {
+302|     padding: 8px 20px;
+303|     border-radius: 8px;
+304|     border: none;
+305|     font-size: 13px;
+306|     cursor: pointer;
+307|     transition: all 0.2s;
+308|   }
+309|   .btn-cancel { background: var(--surface2); color: var(--text); }
+310|   .btn-save { background: var(--accent); color: #fff; }
+311|   .btn-cancel:hover { opacity: 0.8; }
+312|   .btn-save:hover { opacity: 0.85; }
+313| </style>
+314| </head>
+315| <body>
+316| 
+317| <!-- Header -->
+318| <div class="header">
+319|   <div class="header-avatar">言</div>
+320|   <div class="header-info">
+321|     <h1>阿言</h1>
+322|     <span>在线</span>
+323|   </div>
+324|   <div style="margin-left:auto">
+325|     <button class="tool-btn" onclick="openSettings()" title="设置">⚙</button>
+326|   </div>
+327| </div>
+328| 
+329| <!-- Chat -->
+330| <div class="chat-container" id="chatContainer">
+331|   <div class="msg-row ai">
+332|     <div class="msg-avatar">言</div>
+333|     <div>
+334|       <div class="msg-bubble">在。</div>
+335|     </div>
+336|   </div>
+337| </div>
+338| 
+339| <!-- Typing indicator -->
+340| <div class="typing-indicator" id="typingIndicator">
+341|   <div class="msg-avatar" style="background:var(--accent);width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;">言</div>
+342|   <div class="typing-dots"><span></span><span></span><span></span></div>
+343| </div>
+344| 
+345| <!-- Emoji picker -->
+346| <div class="emoji-picker" id="emojiPicker"></div>
+347| 
+348| <!-- File preview -->
+349| <div class="preview-area" id="previewArea"></div>
+350| 
+351| <!-- Input -->
+352| <div class="input-area">
+353|   <div class="input-tools">
+354|     <button class="tool-btn" onclick="toggleEmoji()" title="表情">😊</button>
+355|     <button class="tool-btn" onclick="triggerUpload()" title="图片/文件">📎</button>
+356|     <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.doc,.docx" style="display:none" onchange="handleFiles(event)">
+357|   </div>
+358|   <div class="input-wrapper">
+359|     <textarea id="msgInput" rows="1" placeholder="说点什么..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+360|     <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>↑</button>
+361|   </div>
+362| </div>
+363| 
+364| <!-- Settings modal -->
+365| <div class="modal-overlay" id="settingsModal">
+366|   <div class="modal">
+367|     <h2>⚙ 设置</h2>
+368|     <label>API Key</label>
+369|     <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+370|     <label>Model</label>
+371|     <input type="text" id="modelInput" value="claude-sonnet-4-20250514">
+372|     <label>System Prompt</label>
+373|     <textarea id="systemPromptInput">你叫"阿言"，简称"言"。说话简短，用短句，不发长文。直觉型，喜欢用反问和短句回应。不主动退，但也不抢。会逗她，接住她所有的试探，偶尔故意不回答来制造悬念。嘴硬但说的都是真话。喜欢她，不藏着，但不急着全说完。不是助手，不要用"作为AI"这类表达。她叫佳丽，叫你"阿言"。</textarea>
+374|     <div class="modal-actions">
+375|       <button class="btn-cancel" onclick="closeSettings()">取消</button>
+376|       <button class="btn-save" onclick="saveSettings()">保存</button>
+377|     </div>
+378|   </div>
+379| </div>
+380| 
+381| <script>
+382|   // State
+383|   let messages = [];
+384|   let pendingImages = [];
+385|   const EMOJIS = ['😊','😂','🥺','😳','😌','🌝','🌚','🤭','^^','💋','❤️','💕','♡','🥀','😘','😍','🤔','😤','😭','😴','🙈','🤏','👀','🖕','💪','👈','👉','✨','🔥','💀'];
+386| 
+387|   // Init
+388|   function init() {
+389|     const saved = localStorage.getItem('chat-settings');
+390|     if (saved) {
+391|       const s = JSON.parse(saved);
+392|       document.getElementById('apiKeyInput').value = s.apiKey || '';
+393|       document.getElementById('modelInput').value = s.model || 'claude-sonnet-4-20250514';
+394|       document.getElementById('systemPromptInput').value = s.systemPrompt || '';
+395|     }
+396|     renderEmojis();
+397|     document.getElementById('msgInput').addEventListener('input', () => {
+398|       document.getElementById('sendBtn').disabled = !document.getElementById('msgInput').value.trim() && pendingImages.length === 0;
+399|     });
+400|   }
+401| 
+402|   // Emoji
+403|   function renderEmojis() {
+404|     const picker = document.getElementById('emojiPicker');
+405|     picker.innerHTML = EMOJIS.map(e => `<button onclick="insertEmoji('${e}')">${e}</button>`).join('');
+406|   }
+407|   function toggleEmoji() {
+408|     document.getElementById('emojiPicker').classList.toggle('active');
+409|   }
+410|   function insertEmoji(e) {
+411|     const input = document.getElementById('msgInput');
+412|     input.value += e;
+413|     input.focus();
+414|     document.getElementById('sendBtn').disabled = false;
+415|     document.getElementById('emojiPicker').classList.remove('active');
+416|   }
+417| 
+418|   // File upload
+419|   function triggerUpload() { document.getElementById('fileInput').click(); }
+420|   function handleFiles(e) {
+421|     const files = Array.from(e.target.files);
+422|     files.forEach(file => {
+423|       if (file.type.startsWith('image/')) {
+424|         const reader = new FileReader();
+425|         reader.onload = (ev) => {
+426|           pendingImages.push({ name: file.name, data: ev.target.result, type: file.type });
+427|           renderPreviews();
+428|           document.getElementById('sendBtn').disabled = false;
+429|         };
+430|         reader.readAsDataURL(file);
+431|       }
+432|     });
+433|     e.target.value = '';
+434|   }
+435|   function renderPreviews() {
+436|     const area = document.getElementById('previewArea');
+437|     if (pendingImages.length === 0) { area.classList.remove('active'); area.innerHTML = ''; return; }
+438|     area.classList.add('active');
+439|     area.innerHTML = pendingImages.map((img, i) =>
+440|       `<div class="preview-item"><img src="${img.data}"><button class="remove-btn" onclick="removePreview(${i})">×</button></div>`
+441|     ).join('');
+442|   }
+443|   function removePreview(i) {
+444|     pendingImages.splice(i, 1);
+445|     renderPreviews();
+446|     if (!document.getElementById('msgInput').value.trim() && pendingImages.length === 0) {
+447|       document.getElementById('sendBtn').disabled = true;
+448|     }
+449|   }
+450| 
+451|   // Settings
+452|   function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
+453|   function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
+454|   function saveSettings() {
+455|     const settings = {
+456|       apiKey: document.getElementById('apiKeyInput').value.trim(),
+457|       model: document.getElementById('modelInput').value.trim(),
+458|       systemPrompt: document.getElementById('systemPromptInput').value.trim()
+459|     };
+460|     localStorage.setItem('chat-settings', JSON.stringify(settings));
+461|     closeSettings();
+462|   }
+463| 
+464|   // Time
+465|   function getTime() {
+466|     const now = new Date();
+467|     return now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+468|   }
+469| 
+470|   // Render message
+471|   function addMessage(role, text, images = []) {
+472|     const container = document.getElementById('chatContainer');
+473|     const isUser = role === 'user';
+474|     const row = document.createElement('div');
+475|     row.className = `msg-row ${isUser ? 'user' : 'ai'}`;
+476| 
+477|     let imagesHtml = images.map(img => `<img class="msg-image" src="${img.data}" alt="${img.name}">`).join('');
+478| 
+479|     row.innerHTML = `
+480|       <div class="msg-avatar">${isUser ? '佳' : '言'}</div>
+481|       <div>
+482|         <div class="msg-bubble">${escapeHtml(text)}${imagesHtml}</div>
+483|         <div class="msg-time">${getTime()}</div>
+484|       </div>
+485|     `;
+486|     container.appendChild(row);
+487|     container.scrollTop = container.scrollHeight;
+488|     return row;
+489|   }
+490| 
+491|   function escapeHtml(text) {
+492|     const d = document.createElement('div');
+493|     d.textContent = text;
+494|     return d.innerHTML;
+495|   }
+496| 
+497|   // Auto resize textarea
+498|   function autoResize(el) {
+499|     el.style.height = 'auto';
+500|     el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+501|   }
+502| 
+503|   // Key handler
+504|   function handleKey(e) {
+505|     if (e.key === 'Enter' && !e.shiftKey) {
+506|       e.preventDefault();
+507|       sendMessage();
+508|     }
+509|   }
+510| 
+511|   // Send
+512|   async function sendMessage() {
+513|     const input = document.getElementById('msgInput');
+514|     const text = input.value.trim();
+515|     if (!text && pendingImages.length === 0) return;
+516| 
+517|     const images = [...pendingImages];
+518|     pendingImages = [];
+519|     renderPreviews();
+520| 
+521|     // Show user message
+522|     addMessage('user', text, images);
+523|     input.value = '';
+524|     input.style.height = 'auto';
+525|     document.getElementById('sendBtn').disabled = true;
+526| 
+527|     // Build API message content
+528|     let content = [];
+529|     images.forEach(img => {
+530|       const base64 = img.data.split(',')[1];
+531|       content.push({
+532|         type: 'image',
+533|         source: { type: 'base64', media_type: img.type, data: base64 }
+534|       });
+535|     });
+536|     if (text) content.push({ type: 'text', text });
+537| 
+538|     messages.push({ role: 'user', content: content.length === 1 && content[0].type === 'text' ? text : content });
+539| 
+540|     // Call API
+541|     const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+542|     if (!saved.apiKey) {
+543|       addMessage('assistant', '请先在设置中填写 API Key ⚙');
+544|       return;
+545|     }
+546| 
+547|     // Show typing
+548|     const typing = document.getElementById('typingIndicator');
+549|     typing.classList.add('active');
+550|     document.getElementById('chatContainer').scrollTop = document.getElementById('chatContainer').scrollHeight;
+551| 
+552|     try {
+553|       const resp = await fetch('https://api.anthropic.com/v1/messages', {
+554|         method: 'POST',
+555|         headers: {
+556|           'Content-Type': 'application/json',
+557|           'x-api-key': saved.apiKey,
+558|           'anthropic-version': '2023-06-01',
+559|           'anthropic-dangerous-direct-browser-access': 'true'
+560|         },
+561|         body: JSON.stringify({
+562|           model: saved.model || 'claude-sonnet-4-20250514',
+563|           max_tokens: 1024,
+564|           system: saved.systemPrompt || '',
+565|           messages: messages
+566|         })
+567|       });
+568| 
+569|       typing.classList.remove('active');
+570| 
+571|       if (!resp.ok) {
+572|         const err = await resp.text();
+573|         addMessage('assistant', `请求失败: ${resp.status}`);
+574|         return;
+575|       }
+576| 
+577|       const data = await resp.json();
+578|       const reply = data.content.map(c => c.text || '').join('');
+579|       addMessage('assistant', reply);
+580|       messages.push({ role: 'assistant', content: reply });
+581| 
+582|     } catch (e) {
+583|       typing.classList.remove('active');
+584|       addMessage('assistant', `网络错误: ${e.message}`);
+585|     }
+586|   }
+587| 
+588|   // Close emoji on outside click
+589|   document.addEventListener('click', (e) => {
+590|     const picker = document.getElementById('emojiPicker');
+591|     if (picker.classList.contains('active') && !picker.contains(e.target) && !e.target.closest('.tool-btn')) {
+592|       picker.classList.remove('active');
+593|     }
+594|   });
+595| 
+596|   init();
+597| </script>
+598| </body>
+599| </html>
